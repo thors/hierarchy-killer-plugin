@@ -28,7 +28,6 @@ import javax.servlet.ServletException;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 
-import org.jenkinsci.plugins.hierarchykiller.NotificationEndpoint.EndpointEvent;
 import org.kohsuke.stapler.StaplerRequest;
 
 import com.google.common.collect.Maps;
@@ -38,6 +37,13 @@ public class HierarchyKillerPlugin extends Plugin {
     
     private static Map<Run<?,?>, RunData> iJobMap;
     private static HierarchyKillerPlugin instance;
+    private static int iVerbosity = 6;
+    private static final int debug=4;
+    private static final int error=1;
+    private static final int warning=2;
+    private static final int info=3;
+    private static final int info2=4;
+
     public static void notifyRunStarted(Run<?,?> run, TaskListener listener) {
 	if (null == instance) {
 	    log(listener, "notifyRunStarted: Plugin not yet initialized");
@@ -55,8 +61,9 @@ public class HierarchyKillerPlugin extends Plugin {
 	for(Cause c: run.getCauses()) {
 	    if (c instanceof Cause.UpstreamCause) {
 		Cause.UpstreamCause usc = (Cause.UpstreamCause) c;
-		TaskListener parentTaskListener = iJobMap.get(usc.getUpstreamRun()).iListener;
-		RunData parentRunData = iJobMap.get(usc.getUpstreamRun());
+		r.iUpstream = usc.getUpstreamRun();
+		TaskListener parentTaskListener = iJobMap.get(r.iUpstream).iListener;
+		RunData parentRunData = iJobMap.get(r.iUpstream);
 		if (null != parentRunData) {
 		    // add current run to parents child-list (we know now that parent and child have hierarchy-killer enabled)		 
 		    log(iJobMap.get(usc.getUpstreamRun()).iListener, "HierarchyKiller: This job triggered downstream " + env.get("JENKINS_URL")  + run.getUrl());
@@ -108,10 +115,14 @@ public class HierarchyKillerPlugin extends Plugin {
     
     protected static void killUpAndDownstream(Run<?,?> run, TaskListener listener, EnvVars env, RunData runData) {
 	String reason = "Killed via HierarchyPlugin by " + env.get("JENKINS_URL")  + run.getUrl();
+	log(debug, listener, "killUpAndDownstream: " + reason);
 	if ("true".equals(env.get("HIERARCHY_KILLER_KILL_UPSTREAM","false"))) {
+	    log(debug, listener, "killUpAndDownstream: upstream:" + reason);
 	    if (null != runData.iUpstream && (runData.iUpstream.isBuilding())) {
 		RunData upstreamRunData = iJobMap.get(runData.iUpstream);
 		kill(runData.iUpstream, upstreamRunData.iListener, reason);
+	    } else {
+		log(debug, listener, "killUpAndDownstream: upstream: no running upstream job found");
 	    }
         }
 	if ("true".equals(env.get("HIERARCHY_KILLER_KILL_DOWNSTREAM","false"))) {
@@ -172,6 +183,12 @@ public class HierarchyKillerPlugin extends Plugin {
 	iJobMap.remove(run);
     }
     
+    private static void log(int loglevel, final TaskListener listener, final String message) {
+	if (loglevel < iVerbosity) {
+	    log(listener, message);
+	}
+    }
+
     private static void log(final TaskListener listener, final String message) {
         listener.getLogger().println("HierarchyKillerPlugin: " + message);
     }
@@ -185,9 +202,7 @@ public class HierarchyKillerPlugin extends Plugin {
 	    LOGGER.log(Level.INFO, "HierarchyKillerPlugin: Initialization failed...");
 	}
     }
-  
-    private DescribableList<NotificationEndpoint, Descriptor<NotificationEndpoint>> endpoints = new DescribableList<NotificationEndpoint, Descriptor<NotificationEndpoint>>(this);
-    
+      
     @Override
     public void start() throws Exception {
 	try {
@@ -197,15 +212,10 @@ public class HierarchyKillerPlugin extends Plugin {
 	    LOGGER.log(Level.SEVERE, "HierarchyKillerPlugin: Failed to load", e);
 	}
     }
-    
-    public DescribableList<NotificationEndpoint, Descriptor<NotificationEndpoint>> getEndpoints() {
-	return endpoints;
-    }
-    
+     
     @Override
     public void configure(StaplerRequest req, JSONObject formData) throws IOException, ServletException, FormException {
 	try {
-	    endpoints.rebuildHetero(req, formData, NotificationEndpoint.all(), "endpoints");
 	    save();
 	} catch (IOException e) {
 	    throw new FormException(e, "endpoints");
