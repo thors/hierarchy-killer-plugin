@@ -38,6 +38,7 @@ public class HierarchyKillerPlugin extends Plugin {
     private static Map<Run<?,?>, RunData> iJobMap;
     private static HierarchyKillerPlugin instance;
     private static int iVerbosity = 6;
+    private static int iHitCount = 0;
     private static final int debug=4;
     private static final int error=1;
     private static final int warning=2;
@@ -46,7 +47,7 @@ public class HierarchyKillerPlugin extends Plugin {
 
     public static void notifyRunStarted(Run<?,?> run, TaskListener listener) {
 	if (null == instance) {
-	    log(listener, "notifyRunStarted: Plugin not yet initialized");
+	    log(listener, "HierarchyKillerPlugin.notifyRunStarted: Plugin not yet initialized");
 	    return;
 	}
 	EnvVars env = getEnvVars(run, listener);
@@ -56,7 +57,7 @@ public class HierarchyKillerPlugin extends Plugin {
 	}
 	RunData r = new RunData();
 	r.iListener = listener;
-	log(listener, "HierarchyKillerPlugin: RunDate:" + r + ", listener:" + listener + ", iJobMap:" + iJobMap);
+	log(debug, listener, "HierarchyKillerPlugin: RunData:" + r + ", listener:" + listener + ", iJobMap:" + iJobMap);
 	iJobMap.put(run, r);
 	for(Cause c: run.getCauses()) {
 	    if (c instanceof Cause.UpstreamCause) {
@@ -66,11 +67,12 @@ public class HierarchyKillerPlugin extends Plugin {
 		RunData parentRunData = iJobMap.get(r.iUpstream);
 		if (null != parentRunData) {
 		    // add current run to parents child-list (we know now that parent and child have hierarchy-killer enabled)		 
-		    log(iJobMap.get(usc.getUpstreamRun()).iListener, "HierarchyKiller: This job triggered downstream " + env.get("JENKINS_URL")  + run.getUrl());
+		    log(iJobMap.get(usc.getUpstreamRun()).iListener, "Triggered: " + env.get("JENKINS_URL")  + run.getUrl());
 		    parentRunData.iDownstream.add(run); 
 		}
 	    }
 	}
+	printStats(listener);
     }
 
     public static void notifyRunCompleted(Run<?,?> run, TaskListener listener) {
@@ -130,6 +132,12 @@ public class HierarchyKillerPlugin extends Plugin {
         }
     }
 
+    protected static void printStats(TaskListener listener) {
+	if (iVerbosity > debug) {
+	    LOGGER.log(Level.INFO, "HierarchyKillerPlugin: iHitCount: " + iHitCount + ", size of job-list: " + iJobMap.size());
+	}
+    }
+
     protected static void kill(Run <?,?> run, TaskListener listener, String reason) {
 	log(listener, reason);
 	run.setResult(Result.ABORTED);
@@ -137,6 +145,7 @@ public class HierarchyKillerPlugin extends Plugin {
 	    //As far as I know, all ongoing builds should implement the AbstractBuild interface; need to check for MatrixBuild
 	    try {
 		((AbstractBuild) run).doStop();
+		iHitCount++;
 	    } catch(IOException e) {
 		LOGGER.log(Level.SEVERE, "HierarchyKillerPlugin: IOException while trying to abort " + run.getUrl());
 	    } catch(ServletException e) {
