@@ -52,7 +52,7 @@ public class HierarchyKillerPlugin extends Plugin {
 	}
 	EnvVars env = getEnvVars(run, listener);
 	if (!"true".equals(env.get("ENABLE_HIERARCHY_KILLER","false"))) {
-	    log(listener, "HierarchyKillerPlugin: ENABLE_HIERARCHY_KILLER not true, this build is not governed by HierarchyKiller");
+	    log(debug, listener, "HierarchyKillerPlugin: ENABLE_HIERARCHY_KILLER not true, this build is not governed by HierarchyKiller");
 	    return;
 	}
 	RunData r = new RunData();
@@ -117,9 +117,7 @@ public class HierarchyKillerPlugin extends Plugin {
     
     protected static void killUpAndDownstream(Run<?,?> run, TaskListener listener, EnvVars env, RunData runData) {
 	String reason = "Killed via HierarchyPlugin by " + env.get("JENKINS_URL")  + run.getUrl();
-	log(debug, listener, "killUpAndDownstream: " + reason);
 	if ("true".equals(env.get("HIERARCHY_KILLER_KILL_UPSTREAM","false"))) {
-	    log(debug, listener, "killUpAndDownstream: upstream:" + reason);
 	    if (null != runData.iUpstream && (runData.iUpstream.isBuilding())) {
 		RunData upstreamRunData = iJobMap.get(runData.iUpstream);
 		kill(runData.iUpstream, upstreamRunData.iListener, reason);
@@ -144,6 +142,7 @@ public class HierarchyKillerPlugin extends Plugin {
 	if (run instanceof AbstractBuild) {
 	    //As far as I know, all ongoing builds should implement the AbstractBuild interface; need to check for MatrixBuild
 	    try {
+		LOGGER.log(Level.INFO, "HierarchyKillerPlugin: Aborted " + run.getUrl() + "(" + reason + ")");
 		((AbstractBuild) run).doStop();
 		iHitCount++;
 	    } catch(IOException e) {
@@ -161,8 +160,8 @@ public class HierarchyKillerPlugin extends Plugin {
 	    }
 	    RunData downstreamRunData = iJobMap.get(r);
 	    if ( null == downstreamRunData ) {
-		LOGGER.log(Level.INFO, "HierarchyKillerPlugin: Run is in downstreamlist of another run, not completed, but not in run list.");
-		LOGGER.log(Level.INFO, "HierarchyKillerPlugin: This should not happen. Run is only added to downstream list when it is governed by this plugin");
+		LOGGER.log(Level.SEVERE, "HierarchyKillerPlugin: Run is in downstreamlist of another run, not completed, but not in run list.");
+		LOGGER.log(Level.SEVERE, "HierarchyKillerPlugin: This should not happen. Run is only added to downstream list when it is governed by this plugin");
 		continue;
 	    }
 	    kill(r, downstreamRunData.iListener, reason);
