@@ -16,7 +16,7 @@ import hudson.model.AbstractBuild;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.Executors;
@@ -35,7 +35,7 @@ import com.google.common.collect.Maps;
 public class HierarchyKillerPlugin extends Plugin {
     private static final Logger LOGGER = Logger.getLogger(HierarchyKillerPlugin.class.getName());
     
-    private static Map<Run<?,?>, RunData> iJobMap;
+    private static ConcurrentHashMap<Run<?,?>, RunData> iJobMap;
     private static HierarchyKillerPlugin instance;
     private static int iVerbosity = 6;
     private static int iHitCount = 0;
@@ -63,9 +63,9 @@ public class HierarchyKillerPlugin extends Plugin {
 	    if (c instanceof Cause.UpstreamCause) {
 		Cause.UpstreamCause usc = (Cause.UpstreamCause) c;
 		r.iUpstream = usc.getUpstreamRun();
-		TaskListener parentTaskListener = iJobMap.get(r.iUpstream).iListener;
 		RunData parentRunData = iJobMap.get(r.iUpstream);
 		if (null != parentRunData) {
+		    TaskListener parentTaskListener = parentRunData.iListener;
 		    // add current run to parents child-list (we know now that parent and child have hierarchy-killer enabled)		 
 		    log(iJobMap.get(usc.getUpstreamRun()).iListener, "Triggered: " + env.get("JENKINS_URL")  + run.getUrl());
 		    parentRunData.iDownstream.add(run); 
@@ -206,7 +206,7 @@ public class HierarchyKillerPlugin extends Plugin {
     public static void init() {
 	LOGGER.log(Level.INFO, "HierarchyKillerPlugin: Initialized...");
 	instance = Jenkins.getInstance().getPlugin(HierarchyKillerPlugin.class);
-	iJobMap = new HashMap<Run<?,?>, RunData>();
+	iJobMap = new ConcurrentHashMap<Run<?,?>, RunData>();
 	if (null == instance) {
 	    LOGGER.log(Level.INFO, "HierarchyKillerPlugin: Initialization failed...");
 	}
