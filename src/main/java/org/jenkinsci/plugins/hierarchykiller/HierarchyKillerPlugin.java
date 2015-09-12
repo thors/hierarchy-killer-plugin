@@ -37,7 +37,7 @@ public class HierarchyKillerPlugin extends Plugin {
     
     private static ConcurrentHashMap<Run<?,?>, RunData> iJobMap;
     private static HierarchyKillerPlugin instance;
-    private static int iVerbosity = 6;
+    private static int iVerbosity = 4;
     private static int iHitCount = 0;
     private static final int debug=4;
     private static final int error=1;
@@ -57,7 +57,7 @@ public class HierarchyKillerPlugin extends Plugin {
 	}
 	RunData r = new RunData();
 	r.iListener = listener;
-	log(debug, listener, "HierarchyKillerPlugin: RunData:" + r + ", listener:" + listener + ", iJobMap:" + iJobMap);
+	//log(debug, listener, "HierarchyKillerPlugin: RunData:" + r + ", listener:" + listener + ", iJobMap:" + iJobMap);
 	iJobMap.put(run, r);
 	for(Cause c: run.getCauses()) {
 	    if (c instanceof Cause.UpstreamCause) {
