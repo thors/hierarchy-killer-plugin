@@ -1,3 +1,27 @@
+/*
+ * The MIT License
+ * 
+ * Copyright (c) 2015 Thorsten Möllers
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 package org.jenkinsci.plugins.hierarchykiller;
 
 import static hudson.init.InitMilestone.PLUGINS_STARTED;
@@ -12,6 +36,7 @@ import hudson.model.Cause;
 import hudson.model.Result;
 import hudson.util.DescribableList;
 import hudson.model.AbstractBuild;
+import hudson.model.Executor;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -91,7 +116,7 @@ public class HierarchyKillerPlugin extends Plugin {
 	    return;
 	}
 	if (runData.iReason.length() > 0) {
-	    log(listener, "Aborted by HierarchyKillerPlugin " + runData.iReason);
+	    log(listener, "Aborted by HierarchyKillerPlugin" + runData.iReason);
 	}
 	EnvVars env = getEnvVars(run, listener);
 	if (!"true".equals(env.get("ENABLE_HIERARCHY_KILLER","false"))) {
@@ -118,7 +143,7 @@ public class HierarchyKillerPlugin extends Plugin {
     }
     
     protected static void killUpAndDownstream(Run<?,?> run, TaskListener listener, EnvVars env, RunData runData) {
-	String reason = ", caused by " + env.get("JENKINS_URL")  + run.getUrl();
+	String reason = ", caused by " + env.get("JENKINS_URL")  + run.getUrl() + runData.iReason;
 	if ("true".equals(env.get("HIERARCHY_KILLER_KILL_UPSTREAM","false"))) {
 	    if (null != runData.iUpstream && (runData.iUpstream.isBuilding())) {
 		RunData upstreamRunData = iJobMap.get(runData.iUpstream);
@@ -139,19 +164,14 @@ public class HierarchyKillerPlugin extends Plugin {
     }
 
     protected static void kill(Run <?,?> run, RunData runData, String reason) {
-	runData.iReason = reason + runData.iReason; 
+	runData.iReason = reason; 
 	run.setResult(Result.ABORTED);
 	if (run instanceof AbstractBuild) {
 	    //As far as I know, all ongoing builds should implement the AbstractBuild interface; need to check for MatrixBuild
-	    try {
-		LOGGER.log(Level.INFO, "HierarchyKillerPlugin: Aborted " + run.getUrl() + "(" + reason + ")");
-		((AbstractBuild) run).doStop();
-		iHitCount++;
-	    } catch(IOException e) {
-		LOGGER.log(Level.SEVERE, "HierarchyKillerPlugin: IOException while trying to abort " + run.getUrl());
-	    } catch(ServletException e) {
-		LOGGER.log(Level.SEVERE, "HierarchyKillerPlugin: ServletException while trying to abort " + run.getUrl());
-	    }
+	    LOGGER.log(Level.INFO, "HierarchyKillerPlugin: Aborted " + run.getUrl() + "(" + reason + ")");
+	    Executor e = ((AbstractBuild) run).getExecutor();
+	    e.interrupt(Result.ABORTED);
+	    iHitCount++;
 	}
     }
     protected static void killAllDownstream(Run<?,?> run, TaskListener listener, EnvVars env, RunData runData, String reason) {
