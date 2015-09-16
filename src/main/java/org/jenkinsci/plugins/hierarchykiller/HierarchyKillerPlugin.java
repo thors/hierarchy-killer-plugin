@@ -90,7 +90,9 @@ public class HierarchyKillerPlugin extends Plugin {
 	    log(listener, "HierarchyKillerPlugin: notifyRunCompleted: No runData available to this run. This should never happen...");
 	    return;
 	}
-	log(listener, "notifyRunCompleted");
+	if (runData.iReason.length() > 0) {
+	    log(listener, "Aborted by HierarchyKillerPlugin " + runData.iReason);
+	}
 	EnvVars env = getEnvVars(run, listener);
 	if (!"true".equals(env.get("ENABLE_HIERARCHY_KILLER","false"))) {
 	    log(listener, "notifyRunCompleted: ENABLE_HIERARCHY_KILLER not true, don't care about this build...");
@@ -116,11 +118,11 @@ public class HierarchyKillerPlugin extends Plugin {
     }
     
     protected static void killUpAndDownstream(Run<?,?> run, TaskListener listener, EnvVars env, RunData runData) {
-	String reason = "Killed via HierarchyPlugin by " + env.get("JENKINS_URL")  + run.getUrl();
+	String reason = ", caused by " + env.get("JENKINS_URL")  + run.getUrl();
 	if ("true".equals(env.get("HIERARCHY_KILLER_KILL_UPSTREAM","false"))) {
 	    if (null != runData.iUpstream && (runData.iUpstream.isBuilding())) {
 		RunData upstreamRunData = iJobMap.get(runData.iUpstream);
-		kill(runData.iUpstream, upstreamRunData.iListener, reason);
+		kill(runData.iUpstream, upstreamRunData, reason);
 	    } else {
 		log(debug, listener, "killUpAndDownstream: upstream: no running upstream job found");
 	    }
@@ -136,8 +138,8 @@ public class HierarchyKillerPlugin extends Plugin {
 	}
     }
 
-    protected static void kill(Run <?,?> run, TaskListener listener, String reason) {
-	log(listener, reason);
+    protected static void kill(Run <?,?> run, RunData runData, String reason) {
+	runData.iReason = reason + runData.iReason; 
 	run.setResult(Result.ABORTED);
 	if (run instanceof AbstractBuild) {
 	    //As far as I know, all ongoing builds should implement the AbstractBuild interface; need to check for MatrixBuild
@@ -164,7 +166,7 @@ public class HierarchyKillerPlugin extends Plugin {
 		LOGGER.log(Level.SEVERE, "HierarchyKillerPlugin: This should not happen. Run is only added to downstream list when it is governed by this plugin");
 		continue;
 	    }
-	    kill(r, downstreamRunData.iListener, reason);
+	    kill(r, downstreamRunData, reason);
 	}
     }
 
@@ -187,7 +189,6 @@ public class HierarchyKillerPlugin extends Plugin {
 	if (null == instance ) {
 	    return;
 	}
-	LOGGER.log(Level.INFO, "HierarchyKillerPlugin: Finalized...");
 	iJobMap.remove(run);
     }
     
@@ -238,10 +239,12 @@ public class HierarchyKillerPlugin extends Plugin {
 	public List<Run<?,?> > iDownstream;
 	public Run<?,?> iUpstream;
 	public TaskListener iListener;
+	public String iReason;
 	public RunData() {
 	    iListener = null;
 	    iDownstream = new Vector<Run<?,?> >();
 	    iUpstream = null;
+	    iReason = "";
 	}
     }
 }
