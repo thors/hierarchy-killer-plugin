@@ -25,7 +25,6 @@
 package org.jenkinsci.plugins.hierarchykiller;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Vector;
@@ -78,8 +77,7 @@ public class HierarchyKillerPlugin extends Plugin {
 		r.iUpstream = usc.getUpstreamRun();
 		RunData parentRunData = iJobMap.get(r.iUpstream);
 		if (null != parentRunData) {
-		    TaskListener parentTaskListener = parentRunData.iListener;
-		    // add current run to parents child-list (we know now that parent and child have hierarchy-killer enabled)		 
+		    // add current run to parents child-list (we know now that parent and child have hierarchy-killer enabled)
 		    log(iJobMap.get(usc.getUpstreamRun()).iListener, "Triggered: " + env.get("JENKINS_URL")  + run.getUrl());
 		    parentRunData.iDownstream.add(run); 
 		}
@@ -89,7 +87,6 @@ public class HierarchyKillerPlugin extends Plugin {
     }
 
     public static void notifyRunCompleted(Run<?,?> run, TaskListener listener) {
-	Result result = null;
 	if (null == instance ) {
 	    log(listener, "notifyRunCompleted: Plugin not yet initialized");
 	    return;
@@ -112,7 +109,7 @@ public class HierarchyKillerPlugin extends Plugin {
 	    iJobMap.remove(run);
 	    return;
 	}
-	result = run.getResult();
+	Result result = run.getResult();
 	if (null == result) {
 	    log(listener, "notifyRunCompleted: result == null, ignore");
 	    iJobMap.remove(run);
@@ -174,8 +171,10 @@ public class HierarchyKillerPlugin extends Plugin {
 	    //As far as I know, all ongoing builds should implement the AbstractBuild interface; need to check for MatrixBuild
 	    LOGGER.log(Level.INFO, "HierarchyKillerPlugin: Aborted " + run.getUrl() + "(" + reason + ")");
 	    Executor e = ((AbstractBuild) run).getExecutor();
-	    e.interrupt(Result.ABORTED);
-	    iHitCount++;
+	    if (e != null) {
+		e.interrupt(Result.ABORTED);
+		iHitCount++;
+	    }
 	}
     }
 
