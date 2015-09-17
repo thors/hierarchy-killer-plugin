@@ -24,23 +24,8 @@
 
 package org.jenkinsci.plugins.hierarchykiller;
 
-import static hudson.init.InitMilestone.PLUGINS_STARTED;
-import hudson.Plugin;
-import hudson.EnvVars;
-import hudson.init.Initializer;
-import hudson.model.Descriptor;
-import hudson.model.Descriptor.FormException;
-import hudson.model.Run;
-import hudson.model.TaskListener;
-import hudson.model.Cause;
-import hudson.model.Result;
-import hudson.util.DescribableList;
-import hudson.model.AbstractBuild;
-import hudson.model.Executor;
-
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Vector;
@@ -48,14 +33,17 @@ import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.servlet.ServletException;
-
+import static hudson.init.InitMilestone.PLUGINS_STARTED;
+import hudson.Plugin;
+import hudson.EnvVars;
+import hudson.init.Initializer;
+import hudson.model.Run;
+import hudson.model.TaskListener;
+import hudson.model.Cause;
+import hudson.model.Result;
+import hudson.model.AbstractBuild;
+import hudson.model.Executor;
 import jenkins.model.Jenkins;
-import net.sf.json.JSONObject;
-
-import org.kohsuke.stapler.StaplerRequest;
-
-import com.google.common.collect.Maps;
 
 public class HierarchyKillerPlugin extends Plugin {
     private static final Logger LOGGER = Logger.getLogger(HierarchyKillerPlugin.class.getName());
@@ -157,6 +145,22 @@ public class HierarchyKillerPlugin extends Plugin {
         }
     }
 
+    protected static void killAllDownstream(Run<?,?> run, TaskListener listener, EnvVars env, RunData runData, String reason) {
+	/* Kill all downstream jobs */
+	for(Run <?,?> r: runData.iDownstream) {
+            if (!r.isBuilding()) {
+		continue;
+	    }
+	    RunData downstreamRunData = iJobMap.get(r);
+	    if ( null == downstreamRunData ) {
+		LOGGER.log(Level.SEVERE, "HierarchyKillerPlugin: Run is in downstreamlist of another run, not completed, but not in run list.");
+		LOGGER.log(Level.SEVERE, "HierarchyKillerPlugin: This should not happen. Run is only added to downstream list when it is governed by this plugin");
+		continue;
+	    }
+	    kill(r, downstreamRunData, reason);
+	}
+    }
+
     protected static void printStats(TaskListener listener) {
 	if (iVerbosity > debug) {
 	    LOGGER.log(Level.INFO, "HierarchyKillerPlugin: iHitCount: " + iHitCount + ", size of job-list: " + iJobMap.size());
@@ -172,21 +176,6 @@ public class HierarchyKillerPlugin extends Plugin {
 	    Executor e = ((AbstractBuild) run).getExecutor();
 	    e.interrupt(Result.ABORTED);
 	    iHitCount++;
-	}
-    }
-    protected static void killAllDownstream(Run<?,?> run, TaskListener listener, EnvVars env, RunData runData, String reason) {
-	/* Kill all downstream jobs */
-	for(Run <?,?> r: runData.iDownstream) {
-            if (!r.isBuilding()) {
-		continue;
-	    }
-	    RunData downstreamRunData = iJobMap.get(r);
-	    if ( null == downstreamRunData ) {
-		LOGGER.log(Level.SEVERE, "HierarchyKillerPlugin: Run is in downstreamlist of another run, not completed, but not in run list.");
-		LOGGER.log(Level.SEVERE, "HierarchyKillerPlugin: This should not happen. Run is only added to downstream list when it is governed by this plugin");
-		continue;
-	    }
-	    kill(r, downstreamRunData, reason);
 	}
     }
 
@@ -242,15 +231,6 @@ public class HierarchyKillerPlugin extends Plugin {
 	}
     }
      
-    @Override
-    public void configure(StaplerRequest req, JSONObject formData) throws IOException, ServletException, FormException {
-	try {
-	    save();
-	} catch (IOException e) {
-	    throw new FormException(e, "endpoints");
-	}
-    }
-    
     private void start(Runnable runnable) {
 	Executors.newSingleThreadExecutor().submit(runnable);
     }

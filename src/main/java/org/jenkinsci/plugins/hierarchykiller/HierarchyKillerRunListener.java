@@ -1,7 +1,6 @@
 package org.jenkinsci.plugins.hierarchykiller;
 
 import hudson.Extension;
-import hudson.matrix.MatrixRun;
 import hudson.model.TaskListener;
 import hudson.model.Run;
 import hudson.model.listeners.RunListener;
