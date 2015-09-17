@@ -174,8 +174,10 @@ public class HierarchyKillerPlugin extends Plugin {
 	    //As far as I know, all ongoing builds should implement the AbstractBuild interface; need to check for MatrixBuild
 	    LOGGER.log(Level.INFO, "HierarchyKillerPlugin: Aborted " + run.getUrl() + "(" + reason + ")");
 	    Executor e = ((AbstractBuild) run).getExecutor();
-	    e.interrupt(Result.ABORTED);
-	    iHitCount++;
+	    if (e != null) {
+		e.interrupt(Result.ABORTED);
+		iHitCount++;
+	    }
 	}
     }
 
