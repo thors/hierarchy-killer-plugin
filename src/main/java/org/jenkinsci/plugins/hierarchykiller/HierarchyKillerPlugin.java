@@ -25,7 +25,6 @@
 package org.jenkinsci.plugins.hierarchykiller;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Vector;
@@ -81,8 +80,7 @@ public class HierarchyKillerPlugin extends Plugin {
 		    r.iUpstream = (AbstractBuild) usc.getUpstreamRun();
 		    RunData parentRunData = jobMap.get(r.iUpstream);
 		    if (null != parentRunData) {
-			TaskListener parentTaskListener = parentRunData.iListener;
-			// add current run to parents child-list (we know now that parent and child have hierarchy-killer enabled)		 
+			// add current run to parents child-list (we know now that parent and child have hierarchy-killer enabled)
 			log(jobMap.get(usc.getUpstreamRun()).iListener, "Triggered: " + env.get("JENKINS_URL")  + run.getUrl());
 			parentRunData.iDownstream.add(run); 
 		    }
@@ -93,7 +91,6 @@ public class HierarchyKillerPlugin extends Plugin {
     }
 
     public synchronized static void notifyRunCompleted(AbstractBuild run, TaskListener listener) {
-	Result result = null;
 	if (null == instance ) {
 	    log(listener, "notifyRunCompleted: Plugin not yet initialized");
 	    return;
@@ -116,7 +113,7 @@ public class HierarchyKillerPlugin extends Plugin {
 	    jobMap.remove(run);
 	    return;
 	}
-	result = run.getResult();
+	Result result = run.getResult();
 	if (null == result) {
 	    log(listener, "notifyRunCompleted: result == null, ignore");
 	    jobMap.remove(run);
