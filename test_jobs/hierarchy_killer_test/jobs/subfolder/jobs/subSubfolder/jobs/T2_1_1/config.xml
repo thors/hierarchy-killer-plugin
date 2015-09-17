@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <com.sonyericsson.jenkins.plugins.bfa.model.ScannerJobProperty plugin="build-failure-analyzer@1.13.0">
+      <doNotScan>false</doNotScan>
+    </com.sonyericsson.jenkins.plugins.bfa.model.ScannerJobProperty>
+    <de.pellepelster.jenkins.walldisplay.WallDisplayJobProperty plugin="jenkinswalldisplay@0.6.30"/>
+  </properties>
+  <scm class="hudson.scm.NullSCM"/>
+  <assignedNode>manage</assignedNode>
+  <canRoam>false</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>true</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>export</command>
+    </hudson.tasks.Shell>
+    <hudson.plugins.python.Python plugin="python@1.2">
+      <command>import os,time
+
+print &quot;Job Name:&quot; + os.getenv(&quot;JOB_NAME&quot;,&quot;xxx&quot;)
+time.sleep(int(os.getenv(&quot;SLEEP_&quot; + os.getenv(&quot;JOB_NAME&quot;).replace(&quot;/&quot;,&quot;_&quot;),&quot;1&quot;)))
+if &quot;true&quot;==os.getenv(&quot;FAIL_&quot; + os.getenv(&quot;JOB_NAME&quot;).replace(&quot;/&quot;,&quot;_&quot;),&quot;false&quot;):
+    exit(1)
+</command>
+    </hudson.plugins.python.Python>
+  </builders>
+  <publishers/>
+  <buildWrappers/>
+</project>

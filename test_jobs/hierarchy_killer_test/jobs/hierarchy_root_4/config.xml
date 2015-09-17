@@ -1,0 +1,167 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <com.sonyericsson.jenkins.plugins.bfa.model.ScannerJobProperty plugin="build-failure-analyzer@1.13.0">
+      <doNotScan>false</doNotScan>
+    </com.sonyericsson.jenkins.plugins.bfa.model.ScannerJobProperty>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.BooleanParameterDefinition>
+          <name>ENABLE_HIERARCHY_KILLER</name>
+          <description></description>
+          <defaultValue>true</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+        <hudson.model.BooleanParameterDefinition>
+          <name>HIERARCHY_KILLER_KILL_UPSTREAM</name>
+          <description></description>
+          <defaultValue>true</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+        <hudson.model.BooleanParameterDefinition>
+          <name>HIERARCHY_KILLER_KILL_DOWNSTREAM</name>
+          <description></description>
+          <defaultValue>true</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+        <hudson.model.BooleanParameterDefinition>
+          <name>FAIL_hierarchy_killer_test_subfolder_subSubfolder_T1</name>
+          <description>T1 represents a blocking test job</description>
+          <defaultValue>false</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+        <hudson.model.BooleanParameterDefinition>
+          <name>FAIL_hierarchy_killer_test_subfolder_subSubfolder_T2</name>
+          <description>T2 represents a blocking test job</description>
+          <defaultValue>false</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+        <hudson.model.BooleanParameterDefinition>
+          <name>FAIL_hierarchy_killer_test_subfolder_subSubfolder_TU1</name>
+          <description>TU1 represents a non-blocking test job</description>
+          <defaultValue>false</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+        <hudson.model.BooleanParameterDefinition>
+          <name>FAIL_hierarchy_killer_test_subfolder_subSubfolder_B</name>
+          <description>B represents a build job</description>
+          <defaultValue>false</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>SLEEP_hierarchy_killer_test_subfolder_subSubfolder_T1</name>
+          <description></description>
+          <defaultValue>5</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>SLEEP_hierarchy_killer_test_subfolder_subSubfolder_T2</name>
+          <description></description>
+          <defaultValue>10</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>SLEEP_hierarchy_killer_test_subfolder_subSubfolder_TU1</name>
+          <description></description>
+          <defaultValue>1</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>SLEEP_hierarchy_killer_test_subfolder_subSubfolder_B</name>
+          <description></description>
+          <defaultValue>1</defaultValue>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+    <de.pellepelster.jenkins.walldisplay.WallDisplayJobProperty plugin="jenkinswalldisplay@0.6.30"/>
+  </properties>
+  <scm class="hudson.scm.NullSCM"/>
+  <assignedNode>manage</assignedNode>
+  <canRoam>false</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers>
+    <hudson.triggers.TimerTrigger>
+      <spec>* * * * *</spec>
+    </hudson.triggers.TimerTrigger>
+  </triggers>
+  <concurrentBuild>true</concurrentBuild>
+  <builders>
+    <hudson.plugins.parameterizedtrigger.TriggerBuilder plugin="parameterized-trigger@2.27">
+      <configs>
+        <hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig>
+          <configs>
+            <hudson.plugins.parameterizedtrigger.CurrentBuildParameters/>
+            <hudson.plugins.parameterizedtrigger.PredefinedBuildParameters>
+              <properties>SLEEP_hierarchy_killer_test_subfolder_subSubfolder_B=120
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_T1=50
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_TU1=20
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_T2=1
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_T2_1=1
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_T2_1_1=50
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_T2_1_2=25
+FAIL_hierarchy_killer_test_subfolder_subSubfolder_T2_2_2=true
+FAIL_hierarchy_killer_test_subfolder_subSubfolder_TU1=true
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_M1_l1al2dnodesmanage=1
+FAIL_hierarchy_killer_test_subfolder_subSubfolder_M1_l1al2dnodesmanage=true
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_M1_l1bl2dnodesmanage=5
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_M1_l1al2enodesmanage=7
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_M1_l1bl2enodesmanage=9
+</properties>
+            </hudson.plugins.parameterizedtrigger.PredefinedBuildParameters>
+          </configs>
+          <projects>subfolder/P,subfolder_1/P,subfolder_2/P,subfolder/subSubfolder/M1</projects>
+          <condition>ALWAYS</condition>
+          <triggerWithNoParameters>false</triggerWithNoParameters>
+          <block>
+            <buildStepFailureThreshold>
+              <name>FAILURE</name>
+              <ordinal>2</ordinal>
+              <color>RED</color>
+              <completeBuild>true</completeBuild>
+            </buildStepFailureThreshold>
+            <unstableThreshold>
+              <name>UNSTABLE</name>
+              <ordinal>1</ordinal>
+              <color>YELLOW</color>
+              <completeBuild>true</completeBuild>
+            </unstableThreshold>
+            <failureThreshold>
+              <name>FAILURE</name>
+              <ordinal>2</ordinal>
+              <color>RED</color>
+              <completeBuild>true</completeBuild>
+            </failureThreshold>
+          </block>
+          <buildAllNodesWithLabel>false</buildAllNodesWithLabel>
+        </hudson.plugins.parameterizedtrigger.BlockableBuildTriggerConfig>
+      </configs>
+    </hudson.plugins.parameterizedtrigger.TriggerBuilder>
+  </builders>
+  <publishers>
+    <hudson.plugins.parameterizedtrigger.BuildTrigger plugin="parameterized-trigger@2.27">
+      <configs>
+        <hudson.plugins.parameterizedtrigger.BuildTriggerConfig>
+          <configs>
+            <hudson.plugins.parameterizedtrigger.CurrentBuildParameters/>
+            <hudson.plugins.parameterizedtrigger.PredefinedBuildParameters>
+              <properties>SLEEP_hierarchy_killer_test_subfolder_subSubfolder_B=120
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_T1=50
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_TU1=20
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_T2=1
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_T2_1=1
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_T2_1_1=50
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_T2_1_2=25
+FAIL_hierarchy_killer_test_subfolder_subSubfolder_T2_2_2=true
+FAIL_hierarchy_killer_test_subfolder_subSubfolder_TU1=true
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_M1_l1al2dnodesmanage=1
+FAIL_hierarchy_killer_test_subfolder_subSubfolder_M1_l1al2dnodesmanage=true
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_M1_l1bl2dnodesmanage=5
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_M1_l1al2enodesmanage=7
+SLEEP_hierarchy_killer_test_subfolder_subSubfolder_M1_l1bl2enodesmanage=9
+</properties>
+            </hudson.plugins.parameterizedtrigger.PredefinedBuildParameters>
+          </configs>
+          <projects>subfolder/subSubfolder/M1</projects>
+          <condition>ALWAYS</condition>
+          <triggerWithNoParameters>false</triggerWithNoParameters>
+        </hudson.plugins.parameterizedtrigger.BuildTriggerConfig>
+      </configs>
+    </hudson.plugins.parameterizedtrigger.BuildTrigger>
+  </publishers>
+  <buildWrappers/>
+</project>

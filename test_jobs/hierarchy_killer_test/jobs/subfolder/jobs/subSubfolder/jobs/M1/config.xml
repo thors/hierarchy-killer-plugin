@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<matrix-project plugin="matrix-project@1.6">
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <com.sonyericsson.jenkins.plugins.bfa.model.ScannerJobProperty plugin="build-failure-analyzer@1.13.0">
+      <doNotScan>false</doNotScan>
+    </com.sonyericsson.jenkins.plugins.bfa.model.ScannerJobProperty>
+    <de.pellepelster.jenkins.walldisplay.WallDisplayJobProperty plugin="jenkinswalldisplay@0.6.30"/>
+  </properties>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>true</concurrentBuild>
+  <axes>
+    <hudson.matrix.TextAxis>
+      <name>l1</name>
+      <values>
+        <string>a</string>
+        <string>b</string>
+      </values>
+    </hudson.matrix.TextAxis>
+    <hudson.matrix.TextAxis>
+      <name>l2</name>
+      <values>
+        <string>d</string>
+        <string>e</string>
+      </values>
+    </hudson.matrix.TextAxis>
+    <hudson.matrix.LabelExpAxis>
+      <name>nodes</name>
+      <values>
+        <string>manage</string>
+      </values>
+    </hudson.matrix.LabelExpAxis>
+  </axes>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>export</command>
+    </hudson.tasks.Shell>
+    <hudson.plugins.python.Python plugin="python@1.2">
+      <command>import os,time
+
+job = os.getenv(&quot;JOB_NAME&quot;).replace(&quot;/&quot;,&quot;_&quot;).replace(&quot;=&quot;,&quot;&quot;).replace(&quot;,&quot;,&quot;&quot;)
+print &quot;Job Name:&quot; + job
+time.sleep(int(os.getenv(&quot;SLEEP_&quot; + job,&quot;1&quot;)))
+if &quot;true&quot;==os.getenv(&quot;FAIL_&quot; + job,&quot;false&quot;):
+    exit(1)
+</command>
+    </hudson.plugins.python.Python>
+  </builders>
+  <publishers/>
+  <buildWrappers/>
+  <executionStrategy class="hudson.matrix.DefaultMatrixExecutionStrategyImpl">
+    <runSequentially>false</runSequentially>
+  </executionStrategy>
+</matrix-project>
