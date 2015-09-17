@@ -77,8 +77,7 @@ public class HierarchyKillerPlugin extends Plugin {
 		r.iUpstream = usc.getUpstreamRun();
 		RunData parentRunData = iJobMap.get(r.iUpstream);
 		if (null != parentRunData) {
-		    TaskListener parentTaskListener = parentRunData.iListener;
-		    // add current run to parents child-list (we know now that parent and child have hierarchy-killer enabled)		 
+		    // add current run to parents child-list (we know now that parent and child have hierarchy-killer enabled)
 		    log(iJobMap.get(usc.getUpstreamRun()).iListener, "Triggered: " + env.get("JENKINS_URL")  + run.getUrl());
 		    parentRunData.iDownstream.add(run); 
 		}
