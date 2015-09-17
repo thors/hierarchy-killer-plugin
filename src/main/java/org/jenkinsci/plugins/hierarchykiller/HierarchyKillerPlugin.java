@@ -89,7 +89,6 @@ public class HierarchyKillerPlugin extends Plugin {
     }
 
     public static void notifyRunCompleted(Run<?,?> run, TaskListener listener) {
-	Result result = null;
 	if (null == instance ) {
 	    log(listener, "notifyRunCompleted: Plugin not yet initialized");
 	    return;
@@ -112,7 +111,7 @@ public class HierarchyKillerPlugin extends Plugin {
 	    iJobMap.remove(run);
 	    return;
 	}
-	result = run.getResult();
+	Result result = run.getResult();
 	if (null == result) {
 	    log(listener, "notifyRunCompleted: result == null, ignore");
 	    iJobMap.remove(run);
