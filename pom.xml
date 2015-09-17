@@ -7,7 +7,7 @@
   </parent>
 
   <artifactId>hierarchy-killer</artifactId>
-  <version>0.9</version>
+  <version>0.91</version>
   <packaging>hpi</packaging>
   <name>Jenkins Hierarchy Killer Plugin</name>
   <description>If one job in a hierarchy is aborted/failed, this plugin can kill all other jobs from the same hierarchy to save on resources</description>
