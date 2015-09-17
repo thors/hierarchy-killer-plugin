@@ -25,7 +25,6 @@
 package org.jenkinsci.plugins.hierarchykiller;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Vector;
