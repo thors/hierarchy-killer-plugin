@@ -37,7 +37,6 @@ import static hudson.init.InitMilestone.PLUGINS_STARTED;
 import hudson.Plugin;
 import hudson.EnvVars;
 import hudson.init.Initializer;
-import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.model.Cause;
 import hudson.model.Result;
@@ -48,17 +47,20 @@ import jenkins.model.Jenkins;
 public class HierarchyKillerPlugin extends Plugin {
     private static final Logger LOGGER = Logger.getLogger(HierarchyKillerPlugin.class.getName());
     
-    private static ConcurrentHashMap<Run<?,?>, RunData> iJobMap;
+    private static ConcurrentHashMap<AbstractBuild, RunData> jobMap;
     private static HierarchyKillerPlugin instance;
-    private static int iVerbosity = 4;
-    private static int iHitCount = 0;
+    private static int verbosity = 4;
+    private static int hitCount = 0;
     private static final int debug=4;
     private static final int error=1;
     private static final int warning=2;
     private static final int info=3;
     private static final int info2=4;
 
-    public static void notifyRunStarted(Run<?,?> run, TaskListener listener) {
+    public static HierarchyKillerPlugin get() {
+	return instance;
+    }
+    public synchronized static void notifyRunStarted(AbstractBuild run, TaskListener listener) {
 	if (null == instance) {
 	    log(listener, "HierarchyKillerPlugin.notifyRunStarted: Plugin not yet initialized");
 	    return;
@@ -70,35 +72,37 @@ public class HierarchyKillerPlugin extends Plugin {
 	}
 	RunData r = new RunData();
 	r.iListener = listener;
-	//log(debug, listener, "HierarchyKillerPlugin: RunData:" + r + ", listener:" + listener + ", iJobMap:" + iJobMap);
-	iJobMap.put(run, r);
-	for(Cause c: run.getCauses()) {
+	jobMap.put(run, r);
+	List<Cause> lCauses = run.getCauses();
+	for(Cause c: lCauses) {
 	    if (c instanceof Cause.UpstreamCause) {
 		Cause.UpstreamCause usc = (Cause.UpstreamCause) c;
-		r.iUpstream = usc.getUpstreamRun();
-		RunData parentRunData = iJobMap.get(r.iUpstream);
-		if (null != parentRunData) {
-		    TaskListener parentTaskListener = parentRunData.iListener;
-		    // add current run to parents child-list (we know now that parent and child have hierarchy-killer enabled)		 
-		    log(iJobMap.get(usc.getUpstreamRun()).iListener, "Triggered: " + env.get("JENKINS_URL")  + run.getUrl());
-		    parentRunData.iDownstream.add(run); 
+		if (usc.getUpstreamRun() instanceof AbstractBuild) {
+		    r.iUpstream = (AbstractBuild) usc.getUpstreamRun();
+		    RunData parentRunData = jobMap.get(r.iUpstream);
+		    if (null != parentRunData) {
+			TaskListener parentTaskListener = parentRunData.iListener;
+			// add current run to parents child-list (we know now that parent and child have hierarchy-killer enabled)		 
+			log(jobMap.get(usc.getUpstreamRun()).iListener, "Triggered: " + env.get("JENKINS_URL")  + run.getUrl());
+			parentRunData.iDownstream.add(run); 
+		    }
 		}
 	    }
 	}
 	printStats(listener);
     }
 
-    public static void notifyRunCompleted(Run<?,?> run, TaskListener listener) {
+    public synchronized static void notifyRunCompleted(AbstractBuild run, TaskListener listener) {
 	Result result = null;
 	if (null == instance ) {
 	    log(listener, "notifyRunCompleted: Plugin not yet initialized");
 	    return;
 	}
-	if (!iJobMap.containsKey(run)) {
+	if (!jobMap.containsKey(run)) {
 	    log(listener, "HierarchyKillerPlugin: notifyRunCompleted: This job is not governed by HierarchyKillerPlugin");
 	    return;
 	}
-	RunData runData = iJobMap.get(run); 
+	RunData runData = jobMap.get(run); 
 	if (null == runData) {
 	    log(listener, "HierarchyKillerPlugin: notifyRunCompleted: No runData available to this run. This should never happen...");
 	    return;
@@ -109,13 +113,13 @@ public class HierarchyKillerPlugin extends Plugin {
 	EnvVars env = getEnvVars(run, listener);
 	if (!"true".equals(env.get("ENABLE_HIERARCHY_KILLER","false"))) {
 	    log(listener, "notifyRunCompleted: ENABLE_HIERARCHY_KILLER not true, don't care about this build...");
-	    iJobMap.remove(run);
+	    jobMap.remove(run);
 	    return;
 	}
 	result = run.getResult();
 	if (null == result) {
 	    log(listener, "notifyRunCompleted: result == null, ignore");
-	    iJobMap.remove(run);
+	    jobMap.remove(run);
 	    return;
 	}
 	if ("true".equals(env.get("HIERARCHY_KILLER_KILL_UNSTABLE","false"))) {
@@ -127,14 +131,14 @@ public class HierarchyKillerPlugin extends Plugin {
 		killUpAndDownstream(run, listener, env, runData);
 	    }
 	}
-	iJobMap.remove(run);
+	jobMap.remove(run);
     }
     
-    protected static void killUpAndDownstream(Run<?,?> run, TaskListener listener, EnvVars env, RunData runData) {
+    protected static void killUpAndDownstream(AbstractBuild run, TaskListener listener, EnvVars env, RunData runData) {
 	String reason = ", caused by " + env.get("JENKINS_URL")  + run.getUrl() + runData.iReason;
 	if ("true".equals(env.get("HIERARCHY_KILLER_KILL_UPSTREAM","false"))) {
 	    if (null != runData.iUpstream && (runData.iUpstream.isBuilding())) {
-		RunData upstreamRunData = iJobMap.get(runData.iUpstream);
+		RunData upstreamRunData = jobMap.get(runData.iUpstream);
 		kill(runData.iUpstream, upstreamRunData, reason);
 	    } else {
 		log(debug, listener, "killUpAndDownstream: upstream: no running upstream job found");
@@ -145,13 +149,13 @@ public class HierarchyKillerPlugin extends Plugin {
         }
     }
 
-    protected static void killAllDownstream(Run<?,?> run, TaskListener listener, EnvVars env, RunData runData, String reason) {
+    protected static void killAllDownstream(AbstractBuild run, TaskListener listener, EnvVars env, RunData runData, String reason) {
 	/* Kill all downstream jobs */
-	for(Run <?,?> r: runData.iDownstream) {
+	for(AbstractBuild r: runData.iDownstream) {
             if (!r.isBuilding()) {
 		continue;
 	    }
-	    RunData downstreamRunData = iJobMap.get(r);
+	    RunData downstreamRunData = jobMap.get(r);
 	    if ( null == downstreamRunData ) {
 		LOGGER.log(Level.SEVERE, "HierarchyKillerPlugin: Run is in downstreamlist of another run, not completed, but not in run list.");
 		LOGGER.log(Level.SEVERE, "HierarchyKillerPlugin: This should not happen. Run is only added to downstream list when it is governed by this plugin");
@@ -162,24 +166,22 @@ public class HierarchyKillerPlugin extends Plugin {
     }
 
     protected static void printStats(TaskListener listener) {
-	if (iVerbosity > debug) {
-	    LOGGER.log(Level.INFO, "HierarchyKillerPlugin: iHitCount: " + iHitCount + ", size of job-list: " + iJobMap.size());
+	if (verbosity > debug) {
+	    LOGGER.log(Level.INFO, "HierarchyKillerPlugin: hitCount: " + hitCount + ", size of job-list: " + jobMap.size());
 	}
     }
 
-    protected static void kill(Run <?,?> run, RunData runData, String reason) {
+    protected static void kill(AbstractBuild run, RunData runData, String reason) {
 	runData.iReason = reason; 
 	run.setResult(Result.ABORTED);
-	if (run instanceof AbstractBuild) {
-	    //As far as I know, all ongoing builds should implement the AbstractBuild interface; need to check for MatrixBuild
-	    LOGGER.log(Level.INFO, "HierarchyKillerPlugin: Aborted " + run.getUrl() + "(" + reason + ")");
-	    Executor e = ((AbstractBuild) run).getExecutor();
-	    e.interrupt(Result.ABORTED);
-	    iHitCount++;
-	}
+	//As far as I know, all ongoing builds should implement the AbstractBuild interface; need to check for MatrixBuild
+	LOGGER.log(Level.INFO, "HierarchyKillerPlugin: Aborted " + run.getUrl() + "(" + reason + ")");
+	Executor e = run.getExecutor();
+	e.interrupt(Result.ABORTED);
+	hitCount++;
     }
 
-    protected static EnvVars getEnvVars(Run<?,?> run, TaskListener listener) {
+    protected static EnvVars getEnvVars(AbstractBuild run, TaskListener listener) {
 	EnvVars env = null;
 	try {
 	    env = run.getEnvironment(listener);
@@ -194,15 +196,15 @@ public class HierarchyKillerPlugin extends Plugin {
 	return env;
     }
 
-    public static void notifyRunFinalized(Run<?,?> run) {
+    public static void notifyRunFinalized(AbstractBuild run) {
 	if (null == instance ) {
 	    return;
 	}
-	iJobMap.remove(run);
+	jobMap.remove(run);
     }
     
     private static void log(int loglevel, final TaskListener listener, final String message) {
-	if (loglevel < iVerbosity) {
+	if (loglevel < verbosity) {
 	    log(listener, message);
 	}
     }
@@ -215,7 +217,7 @@ public class HierarchyKillerPlugin extends Plugin {
     public static void init() {
 	LOGGER.log(Level.INFO, "HierarchyKillerPlugin: Initialized...");
 	instance = Jenkins.getInstance().getPlugin(HierarchyKillerPlugin.class);
-	iJobMap = new ConcurrentHashMap<Run<?,?>, RunData>();
+	jobMap = new ConcurrentHashMap<AbstractBuild, RunData>();
 	if (null == instance) {
 	    LOGGER.log(Level.INFO, "HierarchyKillerPlugin: Initialization failed...");
 	}
@@ -236,13 +238,13 @@ public class HierarchyKillerPlugin extends Plugin {
     }
 	
     public static class RunData {
-	public List<Run<?,?> > iDownstream;
-	public Run<?,?> iUpstream;
+	public List<AbstractBuild > iDownstream;
+	public AbstractBuild iUpstream;
 	public TaskListener iListener;
 	public String iReason;
 	public RunData() {
 	    iListener = null;
-	    iDownstream = new Vector<Run<?,?> >();
+	    iDownstream = new Vector<AbstractBuild >();
 	    iUpstream = null;
 	    iReason = "";
 	}
