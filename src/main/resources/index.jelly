@@ -1,0 +1,3 @@
+<div>
+  This plugin allows failing (or unstable) builds to kill all related (upstream/downstream) builds, to provide fast feedback and save resources.
+</div>

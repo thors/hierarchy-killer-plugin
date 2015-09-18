@@ -6,10 +6,10 @@
     <version>1.609</version>
   </parent>
 
-  <artifactId>hierarchy-killer</artifactId>
+  <artifactId>build-hierarchy-killer</artifactId>
   <version>0.91</version>
   <packaging>hpi</packaging>
-  <name>Jenkins Hierarchy Killer Plugin</name>
+  <name>Jenkins Build Hierarchy Killer Plugin</name>
   <description>If one job in a hierarchy is aborted/failed, this plugin can kill all other jobs from the same hierarchy to save on resources</description>
   <url>https://github.com/thors/hierarchy-killer-plugin/wiki</url>
   
@@ -22,7 +22,7 @@
     <developerConnection>scm:git:git@github.com:thors/hierarchy-killer-plugin.git</developerConnection>
     <url>http://github.com/thors/hierarchy-killer-plugin</url>
   </scm>
-  
+ 
   <developers>
   	<developer>
   	  <id>thors</id>
@@ -31,13 +31,6 @@
   	</developer>
   </developers>
 
-  <dependencies>
-    <dependency>
-      <groupId>org.jenkins-ci.plugins</groupId>
-      <artifactId>matrix-project</artifactId>
-      <version>1.4</version>
-    </dependency>
-  </dependencies>
   <pluginRepositories>
     <pluginRepository>
       <id>repo.jenkins-ci.org</id>

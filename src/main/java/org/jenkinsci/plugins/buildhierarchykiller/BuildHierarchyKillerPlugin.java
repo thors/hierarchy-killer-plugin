@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package org.jenkinsci.plugins.hierarchykiller;
+package org.jenkinsci.plugins.buildhierarchykiller;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,11 +43,11 @@ import hudson.model.AbstractBuild;
 import hudson.model.Executor;
 import jenkins.model.Jenkins;
 
-public class HierarchyKillerPlugin extends Plugin {
-    private static final Logger LOGGER = Logger.getLogger(HierarchyKillerPlugin.class.getName());
+public class BuildHierarchyKillerPlugin extends Plugin {
+    private static final Logger LOGGER = Logger.getLogger(BuildHierarchyKillerPlugin.class.getName());
     
     private static ConcurrentHashMap<AbstractBuild, RunData> jobMap;
-    private static HierarchyKillerPlugin instance;
+    private static BuildHierarchyKillerPlugin instance;
     private static int verbosity = 4;
     private static int hitCount = 0;
     private static final int debug=4;
@@ -56,17 +56,17 @@ public class HierarchyKillerPlugin extends Plugin {
     private static final int info=3;
     private static final int info2=4;
 
-    public static HierarchyKillerPlugin get() {
+    public static BuildHierarchyKillerPlugin get() {
 	return instance;
     }
     public synchronized static void notifyRunStarted(AbstractBuild run, TaskListener listener) {
 	if (null == instance) {
-	    log(listener, "HierarchyKillerPlugin.notifyRunStarted: Plugin not yet initialized");
+	    log(listener, "BuildHierarchyKillerPlugin.notifyRunStarted: Plugin not yet initialized");
 	    return;
 	}
 	EnvVars env = getEnvVars(run, listener);
 	if (!"true".equals(env.get("ENABLE_HIERARCHY_KILLER","false"))) {
-	    log(debug, listener, "HierarchyKillerPlugin: ENABLE_HIERARCHY_KILLER not true, this build is not governed by HierarchyKiller");
+	    log(debug, listener, "BuildHierarchyKillerPlugin: ENABLE_HIERARCHY_KILLER not true, this build is not governed by BuildHierarchyKiller");
 	    return;
 	}
 	RunData r = new RunData();
@@ -96,16 +96,16 @@ public class HierarchyKillerPlugin extends Plugin {
 	    return;
 	}
 	if (!jobMap.containsKey(run)) {
-	    log(listener, "HierarchyKillerPlugin: notifyRunCompleted: This job is not governed by HierarchyKillerPlugin");
+	    log(listener, "BuildHierarchyKillerPlugin: notifyRunCompleted: This job is not governed by BuildHierarchyKillerPlugin");
 	    return;
 	}
 	RunData runData = jobMap.get(run); 
 	if (null == runData) {
-	    log(listener, "HierarchyKillerPlugin: notifyRunCompleted: No runData available to this run. This should never happen...");
+	    log(listener, "BuildHierarchyKillerPlugin: notifyRunCompleted: No runData available to this run. This should never happen...");
 	    return;
 	}
 	if (runData.iReason.length() > 0) {
-	    log(listener, "Aborted by HierarchyKillerPlugin" + runData.iReason);
+	    log(listener, "Aborted by BuildHierarchyKillerPlugin" + runData.iReason);
 	}
 	EnvVars env = getEnvVars(run, listener);
 	if (!"true".equals(env.get("ENABLE_HIERARCHY_KILLER","false"))) {
@@ -154,8 +154,8 @@ public class HierarchyKillerPlugin extends Plugin {
 	    }
 	    RunData downstreamRunData = jobMap.get(r);
 	    if ( null == downstreamRunData ) {
-		LOGGER.log(Level.SEVERE, "HierarchyKillerPlugin: Run is in downstreamlist of another run, not completed, but not in run list.");
-		LOGGER.log(Level.SEVERE, "HierarchyKillerPlugin: This should not happen. Run is only added to downstream list when it is governed by this plugin");
+		LOGGER.log(Level.SEVERE, "BuildHierarchyKillerPlugin: Run is in downstreamlist of another run, not completed, but not in run list.");
+		LOGGER.log(Level.SEVERE, "BuildHierarchyKillerPlugin: This should not happen. Run is only added to downstream list when it is governed by this plugin");
 		continue;
 	    }
 	    kill(r, downstreamRunData, reason);
@@ -164,7 +164,7 @@ public class HierarchyKillerPlugin extends Plugin {
 
     protected static void printStats(TaskListener listener) {
 	if (verbosity > debug) {
-	    LOGGER.log(Level.INFO, "HierarchyKillerPlugin: hitCount: " + hitCount + ", size of job-list: " + jobMap.size());
+	    LOGGER.log(Level.INFO, "BuildHierarchyKillerPlugin: hitCount: " + hitCount + ", size of job-list: " + jobMap.size());
 	}
     }
 
@@ -172,7 +172,7 @@ public class HierarchyKillerPlugin extends Plugin {
 	runData.iReason = reason; 
 	run.setResult(Result.ABORTED);
 	//As far as I know, all ongoing builds should implement the AbstractBuild interface; need to check for MatrixBuild
-	LOGGER.log(Level.INFO, "HierarchyKillerPlugin: Aborted " + run.getUrl() + "(" + reason + ")");
+	LOGGER.log(Level.INFO, "BuildHierarchyKillerPlugin: Aborted " + run.getUrl() + "(" + reason + ")");
 	Executor e = run.getExecutor();
 	e.interrupt(Result.ABORTED);
 	hitCount++;
@@ -207,16 +207,16 @@ public class HierarchyKillerPlugin extends Plugin {
     }
 
     private static void log(final TaskListener listener, final String message) {
-        listener.getLogger().println("HierarchyKillerPlugin: " + message);
+        listener.getLogger().println("BuildHierarchyKillerPlugin: " + message);
     }
 
     @Initializer(after = PLUGINS_STARTED)
     public static void init() {
-	LOGGER.log(Level.INFO, "HierarchyKillerPlugin: Initialized...");
-	instance = Jenkins.getInstance().getPlugin(HierarchyKillerPlugin.class);
+	LOGGER.log(Level.INFO, "BuildHierarchyKillerPlugin: Initialized...");
+	instance = Jenkins.getInstance().getPlugin(BuildHierarchyKillerPlugin.class);
 	jobMap = new ConcurrentHashMap<AbstractBuild, RunData>();
 	if (null == instance) {
-	    LOGGER.log(Level.INFO, "HierarchyKillerPlugin: Initialization failed...");
+	    LOGGER.log(Level.INFO, "BuildHierarchyKillerPlugin: Initialization failed...");
 	}
     }
       
@@ -224,9 +224,9 @@ public class HierarchyKillerPlugin extends Plugin {
     public void start() throws Exception {
 	try {
 	    load();
-	    LOGGER.log(Level.INFO, "HierarchyKillerPlugin: Loaded...");
+	    LOGGER.log(Level.INFO, "BuildHierarchyKillerPlugin: Loaded...");
 	} catch (IOException e) {
-	    LOGGER.log(Level.SEVERE, "HierarchyKillerPlugin: Failed to load", e);
+	    LOGGER.log(Level.SEVERE, "BuildHierarchyKillerPlugin: Failed to load", e);
 	}
     }
      
