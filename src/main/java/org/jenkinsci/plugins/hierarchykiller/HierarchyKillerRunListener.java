@@ -11,22 +11,22 @@ import jenkins.YesNoMaybe;
 public class HierarchyKillerRunListener extends RunListener<Run<?, ?>> {
     @Override
     public void onStarted(Run<?, ?> run, TaskListener listener) {
-	if (run instanceof AbstractBuild) {
-	    HierarchyKillerPlugin.notifyRunStarted((AbstractBuild) run, listener);
+	if (run instanceof AbstractBuild && null != HierarchyKillerPlugin.get()) {
+	    HierarchyKillerPlugin.get().notifyRunStarted((AbstractBuild) run, listener);
 	}
     }
 	
     @Override
     public void onCompleted(Run<?, ?> run, TaskListener listener) {
-	if (run instanceof AbstractBuild) {
-	    HierarchyKillerPlugin.notifyRunCompleted((AbstractBuild) run, listener);
+	if (run instanceof AbstractBuild && null != HierarchyKillerPlugin.get()) {
+	    HierarchyKillerPlugin.get().notifyRunCompleted((AbstractBuild) run, listener);
 	}
     }
 	
     @Override
     public void onFinalized(Run<?, ?> run) {
-	if (run instanceof AbstractBuild) {
-	    HierarchyKillerPlugin.notifyRunFinalized((AbstractBuild) run);
+	if (run instanceof AbstractBuild && null != HierarchyKillerPlugin.get()) {
+	    HierarchyKillerPlugin.get().notifyRunFinalized((AbstractBuild) run);
 	}
-    }	
+    }
 }
