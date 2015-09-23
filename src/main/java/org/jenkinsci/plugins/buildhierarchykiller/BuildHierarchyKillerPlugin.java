@@ -36,7 +36,11 @@ import static hudson.init.InitMilestone.PLUGINS_STARTED;
 import hudson.Plugin;
 import hudson.EnvVars;
 import hudson.init.Initializer;
+import hudson.model.Hudson;
 import hudson.model.TaskListener;
+import hudson.model.Queue;
+import hudson.model.Queue.Task;
+import hudson.model.Queue.WaitingItem;
 import hudson.model.Cause;
 import hudson.model.Result;
 import hudson.model.AbstractBuild;
@@ -79,7 +83,7 @@ public class BuildHierarchyKillerPlugin extends Plugin {
 		Cause.UpstreamCause usc = (Cause.UpstreamCause) c;
 		if (usc.getUpstreamRun() instanceof AbstractBuild) {
 		    r.upstream.add((AbstractBuild) usc.getUpstreamRun());
-		    RunData parentRunData = jobMap.get(r.upstream);
+		    RunData parentRunData = jobMap.get((AbstractBuild) usc.getUpstreamRun());
 		    if (null != parentRunData) {
 			// add current run to parents child-list (we know now that parent and child have hierarchy-killer enabled)
 			log(jobMap.get(usc.getUpstreamRun()).listener, "Triggered: " + env.get("JENKINS_URL")  + run.getUrl());
@@ -158,6 +162,17 @@ public class BuildHierarchyKillerPlugin extends Plugin {
 		continue;
 	    }
 	    kill(r, downstreamRunData, reason);
+	}
+	for(Queue.Item item: Hudson.getInstance().getQueue().getItems()) {
+	    for (Cause c: item.getCauses()) {
+		if (c instanceof Cause.UpstreamCause) {
+		    Cause.UpstreamCause usc = (Cause.UpstreamCause) c;
+		    if (run == usc.getUpstreamRun()) {
+			LOGGER.log(Level.INFO, "BuildHierarchyKiller: waiting item " + item.getUrl() + " aborted" + reason);
+			Hudson.getInstance().getQueue().cancel(item.task);
+		    } 
+		}
+	    }
 	}
     }
 
