@@ -86,7 +86,7 @@ public class BuildHierarchyKillerPlugin extends Plugin {
 		    RunData parentRunData = jobMap.get((AbstractBuild) usc.getUpstreamRun());
 		    if (null != parentRunData) {
 			// add current run to parents child-list (we know now that parent and child have hierarchy-killer enabled)
-			log(jobMap.get(usc.getUpstreamRun()).listener, "Triggered: " + env.get("JENKINS_URL")  + run.getUrl());
+			log(jobMap.get(usc.getUpstreamRun()).listener, "Triggered: " + env.get("JENKINS_URL","JENKINS_URL")  + run.getUrl());
 			parentRunData.downstream.add(run); 
 		    }
 		}
