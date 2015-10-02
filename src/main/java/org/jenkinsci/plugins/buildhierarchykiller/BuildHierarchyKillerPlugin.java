@@ -166,13 +166,14 @@ public class BuildHierarchyKillerPlugin extends Plugin {
 	    kill(r, downstreamRunData, reason);
 	}
 	for(Queue.Item item: Hudson.getInstance().getQueue().getItems()) {
-	    for (Cause c: item.getCauses()) {
+	    if (item.getCauses().size() == 1) {
+		Cause c = item.getCauses().get(0);
 		if (c instanceof Cause.UpstreamCause) {
 		    Cause.UpstreamCause usc = (Cause.UpstreamCause) c;
 		    if (run == usc.getUpstreamRun()) {
 			LOGGER.log(Level.INFO, "BuildHierarchyKiller: waiting item " + item.getUrl() + " aborted" + reason);
 			Hudson.getInstance().getQueue().cancel(item.task);
-		    } 
+		    }
 		}
 	    }
 	}
