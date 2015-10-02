@@ -78,7 +78,8 @@ public class BuildHierarchyKillerPlugin extends Plugin {
 	r.listener = listener;
 	jobMap.put(run, r);
 	List<Cause> lCauses = run.getCauses();
-	for(Cause c: lCauses) {
+	if (lCauses.size() == 1) {
+	    Cause c = lCauses.get(0);
 	    if (c instanceof Cause.UpstreamCause) {
 		Cause.UpstreamCause usc = (Cause.UpstreamCause) c;
 		if (usc.getUpstreamRun() instanceof AbstractBuild) {
