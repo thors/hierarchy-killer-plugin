@@ -141,7 +141,9 @@ public class BuildHierarchyKillerPlugin extends Plugin {
 	if ("true".equals(env.get("HIERARCHY_KILLER_KILL_UPSTREAM","false"))) {
 	    for (AbstractBuild upstream: runData.upstream) {
 		RunData upstreamRunData = jobMap.get(upstream);
-		kill(upstream, upstreamRunData, reason);
+		if (null != upstream) { 
+		    kill(upstream, upstreamRunData, reason);
+		}
 	    } 
         }
 	if ("true".equals(env.get("HIERARCHY_KILLER_KILL_DOWNSTREAM","false"))) {
