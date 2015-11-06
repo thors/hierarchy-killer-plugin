@@ -142,7 +142,7 @@ public class BuildHierarchyKillerPlugin extends Plugin {
 	if ("true".equals(env.get("HIERARCHY_KILLER_KILL_UPSTREAM","false"))) {
 	    for (AbstractBuild upstream: runData.upstream) {
 		RunData upstreamRunData = jobMap.get(upstream);
-		if (null != upstream) { 
+		if (null != upstream && upstream.isBuilding()) { 
 		    kill(upstream, upstreamRunData, reason);
 		}
 	    } 
@@ -187,13 +187,18 @@ public class BuildHierarchyKillerPlugin extends Plugin {
     }
 
     protected synchronized void  kill(AbstractBuild run, RunData runData, String reason) {
-	runData.reason = reason; 
-	run.setResult(Result.ABORTED);
-	//As far as I know, all ongoing builds should implement the AbstractBuild interface; need to check for MatrixBuild
-	LOGGER.log(Level.INFO, "BuildHierarchyKillerPlugin: Aborted " + run.getUrl() + "(" + reason + ")");
-	Executor e = run.getExecutor();
-	e.interrupt(Result.ABORTED);
-	hitCount++;
+	runData.reason = reason;
+	try {
+	    if (run.isBuilding()) {
+		run.setResult(Result.ABORTED);
+		//As far as I know, all ongoing builds should implement the AbstractBuild interface; need to check for MatrixBuild
+		LOGGER.log(Level.INFO, "BuildHierarchyKillerPlugin: Aborted " + run.getUrl() + "(" + reason + ")");
+		Executor e = run.getExecutor();
+		e.interrupt(Result.ABORTED);
+		hitCount++;
+	    }
+	} catch (IllegalStateException e) {
+	}
     }
 
     protected EnvVars getEnvVars(AbstractBuild run, TaskListener listener) {
