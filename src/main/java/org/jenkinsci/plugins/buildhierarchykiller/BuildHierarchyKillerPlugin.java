@@ -24,28 +24,21 @@
 
 package org.jenkinsci.plugins.buildhierarchykiller;
 
+import hudson.EnvVars;
+import hudson.Plugin;
+import hudson.init.Initializer;
+import hudson.model.*;
+import jenkins.model.Jenkins;
+
 import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static hudson.init.InitMilestone.PLUGINS_STARTED;
-import hudson.Plugin;
-import hudson.EnvVars;
-import hudson.init.Initializer;
-import hudson.model.Hudson;
-import hudson.model.TaskListener;
-import hudson.model.Queue;
-import hudson.model.Queue.Task;
-import hudson.model.Queue.WaitingItem;
-import hudson.model.Cause;
-import hudson.model.Result;
-import hudson.model.AbstractBuild;
-import hudson.model.Executor;
-import jenkins.model.Jenkins;
 
 public class BuildHierarchyKillerPlugin extends Plugin {
     private static final Logger LOGGER = Logger.getLogger(BuildHierarchyKillerPlugin.class.getName());
@@ -110,7 +103,7 @@ public class BuildHierarchyKillerPlugin extends Plugin {
 	    log(listener, "BuildHierarchyKillerPlugin: notifyRunCompleted: No runData available to this run. This should never happen...");
 	    return;
 	}
-	if (runData.reason.length() > 0) {
+	if (!runData.reason.isEmpty()) {
 	    log(listener, "Aborted by BuildHierarchyKillerPlugin" + runData.reason);
 	}
 	EnvVars env = getEnvVars(run, listener);
@@ -166,14 +159,14 @@ public class BuildHierarchyKillerPlugin extends Plugin {
 	    }
 	    kill(r, downstreamRunData, reason);
 	}
-	for(Queue.Item item: Hudson.getInstance().getQueue().getItems()) {
+	for(Queue.Item item: Jenkins.getInstance().getQueue().getItems()) {
 	    if (item.getCauses().size() == 1) {
 		Cause c = item.getCauses().get(0);
 		if (c instanceof Cause.UpstreamCause) {
 		    Cause.UpstreamCause usc = (Cause.UpstreamCause) c;
-		    if (run == usc.getUpstreamRun()) {
-			LOGGER.log(Level.INFO, "BuildHierarchyKiller: waiting item " + item.getUrl() + " aborted" + reason);
-			Hudson.getInstance().getQueue().cancel(item.task);
+		    if (run.equals(usc.getUpstreamRun())) {
+				LOGGER.log(Level.INFO, "BuildHierarchyKiller: waiting item " + item.getUrl() + " aborted" + reason);
+				Jenkins.getInstance().getQueue().cancel(item.task);
 		    }
 		}
 	    }
@@ -186,20 +179,16 @@ public class BuildHierarchyKillerPlugin extends Plugin {
 	}
     }
 
-    protected synchronized void  kill(AbstractBuild run, RunData runData, String reason) {
-	runData.reason = reason;
-	try {
-	    if (run.isBuilding()) {
-		run.setResult(Result.ABORTED);
-		//As far as I know, all ongoing builds should implement the AbstractBuild interface; need to check for MatrixBuild
-		LOGGER.log(Level.INFO, "BuildHierarchyKillerPlugin: Aborted " + run.getUrl() + "(" + reason + ")");
-		Executor e = run.getExecutor();
-		e.interrupt(Result.ABORTED);
-		hitCount++;
-	    }
-	} catch (IllegalStateException e) {
+	protected void kill(AbstractBuild run, RunData runData, String reason) {
+		runData.reason = reason;
+		if (run.isBuilding()) {
+			//As far as I know, all ongoing builds should implement the AbstractBuild interface; need to check for MatrixBuild
+			LOGGER.log(Level.INFO, "BuildHierarchyKillerPlugin: Aborted " + run.getUrl() + '(' + reason + ')');
+			run.getExecutor().doStop();
+			run.setResult(Result.ABORTED);
+			hitCount++;
+		}
 	}
-    }
 
     protected EnvVars getEnvVars(AbstractBuild run, TaskListener listener) {
 	EnvVars env = null;
