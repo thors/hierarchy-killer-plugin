@@ -165,8 +165,8 @@ public class BuildHierarchyKillerPlugin extends Plugin {
 		if (c instanceof Cause.UpstreamCause) {
 		    Cause.UpstreamCause usc = (Cause.UpstreamCause) c;
 		    if (run.equals(usc.getUpstreamRun())) {
-				LOGGER.log(Level.INFO, "BuildHierarchyKiller: waiting item " + item.getUrl() + " aborted" + reason);
-				Jenkins.getInstance().getQueue().cancel(item.task);
+				log(listener, "BuildHierarchyKiller: waiting item " + item.getUrl() + " aborted" + reason);
+				Jenkins.getInstance().getQueue().cancel(item);
 		    }
 		}
 	    }
