@@ -224,7 +224,7 @@ public class BuildHierarchyKillerPlugin extends Plugin {
      * @param run
      */
     void notifyRunFinalized(Run run) {
-        if (null == instance ) {
+        if (null == instance) {
             return;
         }
         if (!active) {
@@ -232,6 +232,7 @@ public class BuildHierarchyKillerPlugin extends Plugin {
             return;
         }
         jobMap.remove(run);
+    }
 
     /**
      * Kill all up- and downstream jobs to this one, if so indicated in run-data
