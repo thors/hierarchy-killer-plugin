@@ -218,6 +218,22 @@ public class BuildHierarchyKillerPlugin extends Plugin {
 	}
 
     /**
+     * This method is invoked for the event of job finalized (that is, after the last post-build step was performed)
+     * Method might be called asynchronous, job state already be finalized when event is received
+     *
+     * @param run
+     */
+    void notifyRunFinalized(Run run) {
+        if (null == instance ) {
+            return;
+        }
+        if (!active) {
+            LOGGER.log(Level.INFO, "BuildHierarchyKillerPlugin: BuildHierarchyKillerPlugin.notifyRunFinalized: Plugin disabled");
+            return;
+        }
+        jobMap.remove(run);
+
+    /**
      * Kill all up- and downstream jobs to this one, if so indicated in run-data
      * Conveniently, only direct predecessors and descendants need to be aborted, since a new RunCompleted indication
      * will be received once they are terminated which then triggers termination of their predecessors/descendants
@@ -323,23 +339,6 @@ public class BuildHierarchyKillerPlugin extends Plugin {
 			env = new EnvVars();
 		}
 		return env;
-	}
-
-    /**
-     * This method is invoked for the event of job finalized (that is, after the last post-build step was performed)
-     * Method might be called asynchronous, job state already be finalized when event is received
-     *
-     * @param run
-     */
-	void notifyRunFinalized(Run run) {
-		if (null == instance ) {
-			return;
-		}
-        if (!active) {
-            LOGGER.log(Level.INFO, "BuildHierarchyKillerPlugin: BuildHierarchyKillerPlugin.notifyRunFinalized: Plugin disabled");
-            return;
-        }
-        jobMap.remove(run);
 	}
 
     /**
