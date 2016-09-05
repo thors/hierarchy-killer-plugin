@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.jenkinsci.plugins.workflow.job.*;
 
 import static hudson.init.InitMilestone.PLUGINS_STARTED;
 
@@ -316,6 +317,9 @@ public class BuildHierarchyKillerPlugin extends Plugin {
             LOGGER.log(Level.INFO, "BuildHierarchyKillerPlugin: Aborted " + run.getUrl() + '(' + reason + ')');
             run.getExecutor().doStop();
             run.setResult(Result.ABORTED);
+            if (run.getParent() instanceof WorkflowJob)  {
+                run.getExecutor().interrupt();
+            }
             hitCount++;
         }
     }

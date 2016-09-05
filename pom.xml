@@ -20,7 +20,7 @@
 
   <artifactId>build-hierarchy-killer</artifactId>
   <packaging>hpi</packaging>
-  <version>0.100</version>
+  <version>0.101-beta</version>
   <name>Jenkins Build Hierarchy Killer Plugin</name>
   <description>If one job in a hierarchy is aborted/failed, this plugin can kill all other jobs from the same hierarchy to save on resources</description>
   <url>https://github.com/thors/hierarchy-killer-plugin/wiki</url>
@@ -52,7 +52,13 @@
       <url>http://repo.jenkins-ci.org/public/</url>
     </pluginRepository>
   </pluginRepositories>
-
+    <dependencies>
+      <dependency>
+        <groupId>org.jenkins-ci.plugins.workflow</groupId>
+        <artifactId>workflow-job</artifactId>
+        <version>2.5</version>
+      </dependency>
+    </dependencies>
   <licenses>
     <license>
       <name>MIT</name>
